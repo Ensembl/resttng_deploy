@@ -1,0 +1,25 @@
+# role: mysql
+
+- name: Install mysql packages (mysql)
+  action: apt pkg={{item}} state=installed
+  with_items:
+       - mysql-server
+       - mysql-client
+       - libdbi-perl
+       - python-mysqldb
+
+- name: Mount the mysql volume
+  mount:
+    path: /dev/vdb
+    src: /var/lib/mysql
+    fstype: ext4
+    state: present
+    
+- name: Ensure database files are owned by mysql
+  file:
+    path: /var/lib/mysql
+    owner: mysql
+    group: mysql
+    recurse: yes
+    state: directory
+  notify: Restart-Mysql

@@ -1,0 +1,39 @@
+# role: reboot
+
+- name: wait for host to come up
+  become: false
+  local_action: command ssh -o BatchMode=yes {{ vm_username }}@{{ ansible_ssh_host }} true
+  register: result
+  until: result|success
+  retries: 30
+  delay: 10
+
+- name: Wait for cloud-init to finish
+  raw: test -f /var/lib/cloud/instance/boot-finished
+  retries: 20
+  delay: 10
+  register: cmd_res
+  changed_when: false
+  until: cmd_res | success
+
+- name: Check if reboot is required
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required_file
+
+# ref https://support.ansible.com/hc/en-us/articles/201958037-Reboot-a-server-and-wait-for-it-to-come-back
+- name: Rebooting machine
+  shell: sleep 2 && shutdown -r now "Ansible updates triggered"
+  async: 1
+  poll: 0
+  ignore_errors: true
+  when: reboot_required_file.stat.exists
+
+- name: wait for host to come up after reboot
+  become: false
+  local_action: command ssh -o BatchMode=yes {{ vm_username }}@{{ ansible_ssh_host }} true
+  register: result
+  until: result|success
+  retries: 30
+  delay: 10
+  when: reboot_required_file.stat.exists

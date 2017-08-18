@@ -1,0 +1,26 @@
+# role: gateway_ssh
+
+- name: Wait for cloud-init to finish
+  raw: test -f /var/lib/cloud/instance/boot-finished
+  retries: 20
+  delay: 10
+  register: cmd_res
+  changed_when: false
+  until: cmd_res | success
+  
+- name: Create ssh config file
+  blockinfile:
+    dest: ~/.ssh/config
+    create: yes
+    marker: "# {mark} SSH to private hosts"
+    insertbefore: BOF
+    content: |
+      Host 192.168.0.*
+        HostName %h
+        User {{ vm_username }}
+        IdentityFile ~/.ssh/rest.pem
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+
+- name: Add rest private key
+  copy: src="{{ rest_private_key }}" dest="~/.ssh/rest.pem" mode=0600

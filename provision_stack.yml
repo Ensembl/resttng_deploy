@@ -1,0 +1,224 @@
+# Create a REST cluster on OpenStack
+
+- name: Make the openstack instance(s)
+  hosts: localhost
+  connection: local
+  gather_facts: False
+
+  tasks:
+
+    - name: Create the edge router
+      register: haproxy_vm
+      os_server:
+        state: present
+        cloud: "{{ cloud_name }}"
+        name: haproxy
+        image: "{{ image }}"
+        key_name: "{{ host_key }}"
+        security_groups:
+          - ssh
+          - http
+        timeout: 200
+        flavor: s1.small
+        terminate_volume: yes
+        nics: "net-id=f9ef7b9f-12ba-4790-9ae9-efeb2c3cbcef"
+        meta:
+         hostname: haproxy
+         group: router
+         project: rest_prototype
+        userdata: |
+          #cloud-config
+          package_upgrade: true
+          package_reboot_if_required: false
+          packages:
+            - python-minimal
+          runcmd:
+            - sudo perl -pi -e "s/127.0.0.1 localhost.*/127.0.0.1 localhost `hostname`/g" /etc/hosts
+      tags: ['vm_creation']
+
+    - name: Add external IP
+      os_floating_ip:
+        cloud: "{{ cloud_name }}"
+        state: present
+        server: haproxy
+        fixed_address: "{{ floating_ip }}"
+
+    - name: add haproxy to inventory
+      add_host:
+        name: "haproxy"
+        groups: routers
+        ansible_ssh_host: "{{ haproxy_vm.openstack.public_v4 }}"
+        ansible_ssh_user: "{{ vm_username }}"
+        public_ip: "{{ haproxy_vm.openstack.public_v4 }}"
+      tags: ['vm_creation']
+
+    - name: Create the mysql server
+      register: mysql_vm
+      os_server:
+        state: present
+        cloud: "{{ cloud_name }}"
+        name: mysql
+        image: "{{ image }}"
+        key_name: "{{ host_key }}"
+        security_groups:
+          - ssh
+        timeout: 200
+        flavor: s1.large
+        nics: "net-id=f9ef7b9f-12ba-4790-9ae9-efeb2c3cbcef"
+        auto_ip: no
+        meta:
+         hostname: mysql
+         group: database
+         project: rest_prototype
+        userdata: |
+          #cloud-config
+          package_upgrade: true
+          package_reboot_if_required: false
+          packages:
+            - python-minimal
+          runcmd:
+            - sudo perl -pi -e "s/127.0.0.1 localhost.*/127.0.0.1 localhost `hostname`/g" /etc/hosts
+      tags: ['vm_creation']
+         
+    - name: Attach the mysql volume
+      os_server_volume:
+        state: present
+        cloud: "{{ cloud_name }}"
+        server: mysql
+        volume: mysql_databases
+        device: /dev/vdb
+
+    - name: add the mysql to inventory
+      add_host:
+        name: "mysql"
+        groups: databases
+        ansible_ssh_host: "{{ mysql_vm.openstack.private_v4 }}"
+        ansible_ssh_user: "{{ vm_username }}"
+      tags: ['vm_creation']
+
+    - name: Create the catalyst rest server
+      register: rest_catalyst_vms
+      os_server:
+        state: present
+        cloud: "{{ cloud_name }}"
+        name: "catalyst-{{ item }}"
+        image: "{{ image }}"
+        key_name: "{{ host_key }}"
+        security_groups:
+          - ssh
+          - http
+        timeout: 200
+        flavor: s1.large
+        terminate_volume: yes
+        nics: "net-id=f9ef7b9f-12ba-4790-9ae9-efeb2c3cbcef"
+        auto_ip: no
+        meta:
+         hostname: rest
+         group: www
+         project: rest_prototype
+        userdata: |
+          #cloud-config
+          package_upgrade: true
+          package_reboot_if_required: false
+          packages:
+            - python-minimal
+          runcmd:
+            - sudo perl -pi -e "s/127.0.0.1 localhost.*/127.0.0.1 localhost `hostname`/g" /etc/hosts
+      with_sequence: count={{ num_catalyst_workers }}
+      tags: ['vm_creation']
+
+    - name: add the catalyst workers to inventory
+      add_host:
+        name: "{{ item.openstack.name }}"
+        groups: catalyst_workers
+        ansible_ssh_host: "{{ item.openstack.private_v4 }}"
+        ansible_ssh_user: "{{ vm_username }}"
+      with_items: "{{ rest_catalyst_vms.results }}"
+      tags: ['vm_creation']
+
+    - name: Create the tark server
+      register: rest_tark_vms
+      os_server:
+        state: present
+        cloud: "{{ cloud_name }}"
+        name: "tark-{{ item }}"
+        image: "{{ image }}"
+        key_name: "{{ host_key }}"
+        security_groups:
+          - ssh
+          - http
+        timeout: 200
+        flavor: s1.large
+        terminate_volume: yes
+        nics: "net-id=f9ef7b9f-12ba-4790-9ae9-efeb2c3cbcef"
+        auto_ip: no
+        meta:
+         hostname: tark
+         group: www
+         project: rest_prototype
+        userdata: |
+          #cloud-config
+          package_upgrade: true
+          package_reboot_if_required: false
+          packages:
+            - python-minimal
+          runcmd:
+            - sudo perl -pi -e "s/127.0.0.1 localhost.*/127.0.0.1 localhost `hostname`/g" /etc/hosts
+      with_sequence: count={{ num_tark_workers }}
+      tags: ['vm_creation']
+
+    - name: add the tark workers to inventory
+      add_host:
+        name: "{{ item.openstack.name }}"
+        groups: tark_workers
+        ansible_ssh_host: "{{ item.openstack.private_v4 }}"
+        ansible_ssh_user: "{{ vm_username }}"
+      with_items: "{{ rest_tark_vms.results }}"
+      tags: ['vm_creation']
+
+    - name: wait for haproxy to come up
+      command: >
+        ssh -o BatchMode=yes
+        {{ vm_username }}@{{ haproxy_vm.openstack.public_v4 }} true
+      register: result
+      until: result|success
+      retries: 300
+      delay: 5
+      tags: ["wait_for_ssh"]
+
+- name: Configure gateway
+  hosts:
+    - routers
+  become: yes
+  gather_facts: False
+
+  roles:
+    - gateway_ssh
+
+- name: Reboot machines if needed
+  hosts:
+    - all
+  become: yes
+  gather_facts: False
+
+  roles:
+    - reboot
+
+- name: Base installation
+  hosts:
+    - all
+  become: yes
+
+  roles:
+    - hosts
+    - system
+
+- name: Mysql server(s) setup
+  hosts:
+    - databases
+  become: yes
+
+  roles:
+    - mysql
+
+

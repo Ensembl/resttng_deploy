@@ -1,0 +1,40 @@
+# Delete REST instances
+
+- name: Delete REST instances
+  hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars:
+    remove_tark: "yes"
+    remove_catalyst: "yes"
+    remove_mysql: "yes"
+    remove_haproxy: "yes"
+    
+  tasks:
+
+    - name: remove catalyst workers
+      os_server:
+        name: "catalyst-{{ item }}"
+        state: absent
+      with_sequence: count={{ num_catalyst_workers }}
+      when: remove_catalyst | bool
+
+    - name: remove tark workers
+      os_server:
+        name: "tark-{{ item }}"
+        state: absent
+      with_sequence: count={{ num_tark_workers }}
+      when: remove_tark | bool
+
+    - name: remove mysql
+      os_server:
+        name: "mysql"
+        state: absent
+      when: remove_mysql | bool
+
+    - name: remove haproxy
+      os_server:
+        name: "haproxy"
+        state: absent
+      when: remove_haproxy | bool

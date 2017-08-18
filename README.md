@@ -1,0 +1,1 @@
+- Ansible playbook to deploy the REST TNG stack on OpenStack
