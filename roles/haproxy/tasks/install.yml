@@ -25,12 +25,12 @@
     creates: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}/README"
     copy: no
 
-- make:
-    chdir: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}"
-    params:
-      TARGET: linux2628
-      USE_OPENSSL: 1
-      USE_PCRE: "{{ USE_PCRE }}"
+#- make:
+#    chdir: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}"
+#    params:
+#      TARGET: linux2628
+#      USE_OPENSSL: 1
+#      USE_PCRE: "{{ USE_PCRE }}"
 
 #- make:
 #    chdir: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}"

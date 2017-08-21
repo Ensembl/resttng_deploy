@@ -40,28 +40,28 @@ frontend www_http_https
 	bind 0.0.0.0:80
 #	bind *:443 ssl crt /etc/haproxy/certs/resttng.pem
 
-	# Add the appropriate header depending on protocol
-	http-request set-header X-Forwarded-Proto https if  { ssl_fc }
-	http-request set-header X-Forwarded-Proto http  if !{ ssl_fc }
-
-        # General request protection
-	acl deny_big hdr_val(content-length) ge 1000000
-	block if METH_POST deny_big
-
 	# Rate limit abuse
         stick-table type ip size 1m expire 10s store gpc0,http_req_rate(10s)
         tcp-request connection track-sc1 src
 	acl flag_ratelimit_abuser src_get_gpc0 gt 0
 			   
 	# Hard rate limit for number of requests
-	acl abuse src_http_req_rate(ft_haproxy) gt 350
-	acl flag_abuser src_inc_gpc0(ft_haproxy) gt 0 # I've add "gt 0" otherwise it's not parsed
+	acl abuse src_http_req_rate(www_http_https) gt 350
+	acl flag_abuser src_inc_gpc0(www_http_https) gt 0 # I've add "gt 0" otherwise it's not parsed
 
         #
         # refuses a new connection from an abuser
         tcp-request content reject if abuse flag_abuser flag_ratelimit_abuser
         # returns a 403 for requests in an established connection
         http-request deny if abuse flag_abuser flag_ratelimit_abuser
+
+        # General request protection
+	acl deny_big hdr_val(content-length) ge 1000000
+	http-request deny if METH_POST deny_big
+
+	# Add the appropriate header depending on protocol
+	http-request set-header X-Forwarded-Proto https if  { ssl_fc }
+	http-request set-header X-Forwarded-Proto http  if !{ ssl_fc }
 
 	default_backend catalyst_rest
 
