@@ -1,0 +1,10 @@
+---
+# group_vars: all
+
+haproxy_manage_config: true
+
+haproxy_minor_versoin: 7
+haproxy_point_release: 9
+
+use_pcre3: false
+USE_PCRE: 0

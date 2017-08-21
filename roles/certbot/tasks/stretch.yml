@@ -1,0 +1,7 @@
+---
+# role: certbot/stretch
+
+- name: Install certbot (Debian Stretch)
+  action: apt pkg={{item}} state=installed
+  with_items:
+    - certbot

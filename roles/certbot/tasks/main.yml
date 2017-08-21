@@ -1,0 +1,14 @@
+---
+# role: certbot
+
+- name: Install certbot (RH based OS)
+  include: redhat.yml
+  when: ansible_pkg_mgr == 'dnf' or ansible_pkg_mgr == 'yum'
+
+- name: Install certbot (Ubuntu)
+  include: ubuntu.yml
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install certbot (Debian Stretch)
+  include: stretch.yml
+  when: ansible_distribution_release == 'stretch'

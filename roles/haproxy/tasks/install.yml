@@ -1,0 +1,59 @@
+# role: haproxy/install
+
+- name: Check for apt based distro
+  set_fact:
+    use_pcre3: true
+    USE_PCRE: 1
+  when: ansible_pkg_mgr == 'apt'
+  
+- name: Install pcre3 if using apt
+  action: apt pkg={{item}} state=installed
+  with_items:
+       - libpcre3
+       - libpcre3-dev
+  when: use_pcre3 | bool
+
+- name: Download haproxy
+  get_url:
+    url: "http://www.haproxy.org/download/1.{{ haproxy_minor_version }}/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}.tar.gz"
+    dest: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}.tar.gz"
+
+- name: Expand haproxy archive
+  unarchive:
+    src: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}.tar.gz"
+    dest: "/usr/local/src/"
+    creates: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}/README"
+    copy: no
+
+- make:
+    chdir: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}"
+    params:
+      TARGET: linux2628
+      USE_OPENSSL: 1
+      USE_PCRE: "{{ USE_PCRE }}"
+
+#- make:
+#    chdir: "/usr/local/src/haproxy-1.{{ haproxy_minor_version }}.{{ haproxy_point_release }}"
+#    target: install
+
+# Leave the above build there, but we'll use the packages for now,
+# address getting 1.7.x on CentOS and Ubuntu Xenial if we ever need
+# to, but Stretch is 1.7, good enough for now
+
+- name: Install haproxy ppa for Ubuntu
+  apt_repository:
+    repo: "ppa:vbernat/haproxy-1.7"
+    state: present
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install haproxy
+  action: apt pkg={{item}} state=installed
+  with_items:
+    - haproxy
+
+- name: Enable haproxy
+  service:
+    name: haproxy
+    enabled: yes
+    

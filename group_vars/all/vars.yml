@@ -1,0 +1,16 @@
+---
+
+vm_username: debian
+#vm_username: ubuntu
+num_catalyst_workers: 2
+num_tark_workers: 1
+rest_private_key: "~/.ssh/rest.pem"
+
+cloud_name: embassy6
+host_key: rest
+floating_ip: 193.62.52.138
+
+# Stetch
+image: d7ef3727-ba69-4439-b9dd-5ff2d9c351f1
+# Xenial
+#image: 86c6418b-d4f3-4add-8780-4629e30ce73d

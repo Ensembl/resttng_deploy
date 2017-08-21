@@ -1,0 +1,11 @@
+---
+# role: haproxy/configure
+
+- name: Install haproxy config
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    force: yes
+    owner: root
+    group: root
+  notify: Restart-Haproxy

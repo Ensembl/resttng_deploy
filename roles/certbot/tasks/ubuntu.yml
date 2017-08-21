@@ -1,0 +1,19 @@
+---
+# role: certbot/ubuntu
+
+- name: Install software-properties-common
+  action: apt pkg={{item}} state=installed
+  with_items:
+    - software-properties-common
+
+- name: Install certbot ppa for Ubuntu
+  apt_repository:
+    repo: "ppa:certbot/certbot"
+    state: present
+    update_cache: yes
+
+- name: Install certbot (Ubuntu)
+  action: apt pkg={{item}} state=installed
+  with_items:
+    - certbot
+

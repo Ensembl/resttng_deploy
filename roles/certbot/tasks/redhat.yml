@@ -1,0 +1,8 @@
+---
+# role: certbot/redhat
+
+- name: Download certbot
+  get_url:
+    url: https://dl.eff.org/certbot-auto
+    dest: /usr/sbin/certbot
+    mode: 0755
