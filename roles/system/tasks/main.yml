@@ -5,6 +5,7 @@
   with_items:
        - unzip
        - git
+       - links
 
 # Ubuntu (Xenial) systems
 - name: Install common system packages (Ubuntu)
@@ -21,6 +22,7 @@
        - python-pip
        - virtualenv
        - libssl-dev
+       - mysql-client
   when: ansible_distribution == 'Ubuntu'
 
 # Debian (Stretch) systems
@@ -38,7 +40,16 @@
        - python-pip
        - virtualenv
        - libssl-dev
+       - mysql-client
   when: ansible_distribution == 'Debian'
+
+# Not yet tested on a RH based system
+- name: Add repository
+  yum_repository:
+    name: epel
+    description: EPEL YUM repo
+    baseurl: https://download.fedoraproject.org/pub/epel/$releasever/$basearch/
+  when: ansible_os_family == 'RedHat'
 
 # Not yet tested on a RH based system
 - name: Install common system packages (RedHat)

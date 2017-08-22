@@ -7,3 +7,23 @@
     line: '{{ hostvars[item].ansible_default_ipv4.address }} {{item}}'
     state: present
   with_items: '{{ groups["all"] }}'
+
+- name: Add rest private key
+  become: false
+  copy: src="{{ rest_private_key }}" dest="~/.ssh/rest.pem" mode=0600
+  
+- name: Create ssh hostname aliases
+  become: false
+  blockinfile:
+    dest: ~/.ssh/config
+    create: yes
+    marker: "# {mark} SSH to {{ item }}"
+    content: |
+      Host {{ item }}
+        HostName {{ item }}
+        User {{ vm_username }}
+        IdentityFile ~/.ssh/rest.pem
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+  with_items: '{{ groups["all"] }}'
+

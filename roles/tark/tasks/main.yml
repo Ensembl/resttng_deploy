@@ -1,0 +1,84 @@
+# role: tark
+
+- name: Install mod_wsgi stack (Debian)
+  action: apt pkg={{item}} state=installed
+  with_items:
+       - apache2
+       - libapache2-mod-wsgi
+       - python-pip
+       - libpq-dev
+  when: ansible_os_family == 'Debian'
+
+- name: Install mod_wsgi stack (Redhat)
+  action: apt pkg={{item}} state=installed
+  with_items:
+       - httpd
+       - mod_wsgi
+       - python-pip
+       - postgresql-devel
+  when: ansible_os_family == 'Redhat'
+
+- name: Create the directory for tark
+  file:
+    path: /opt/tark
+    state: directory
+    mode: 0755
+    owner: "{{ vm_username }}"
+    group: "{{ vm_username }}"
+- name: Fetch TaRK git repo
+  become: false
+  git:
+    repo: "https://github.com/lairdm/tark_ui.git"
+    dest: /opt/tark/tark_app
+    version: master
+    clone: yes
+
+- name: Create TaRK virtualenv
+  become: false
+  pip:
+    requirements: /opt/tark/tark_app/requirements.txt
+    virtualenv: /opt/tark/env
+
+- name: Copy wsgi script to tark
+  copy:
+    src: tark.wsgi
+    dest: /opt/tark/tark_app/tark.wsgi
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Copy tark virtual host config
+  copy:
+    src: tark.conf
+    dest: /etc/apache2/sites-available/tark.conf
+    owner: root
+    group: root
+    mode: 744
+
+- name: Activate tark vhost
+  command: "a2ensite {{ item }}"
+  with_items:
+    - tark
+  notify: Restart-Apache
+    
+- name: Disable default vhost
+  command: "a2dissite {{ item }}"
+  with_items:
+    - 000-default
+  notify: Restart-Apache
+
+- name: Activate wsgi module
+  apache2_module:
+    state: present
+    name: wsgi
+  notify: Restart-Apache
+  
+# Using the default anonymous user, there is no
+# secret here.
+- name: Move secrets files in to app
+  copy:
+    src: secrets.py
+    dest: /opt/tark/tark_app/tark_rest/settings/secrets.py
+    owner: www-data
+    group: www-data
+    mode: 0644

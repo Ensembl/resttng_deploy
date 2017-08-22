@@ -1,5 +1,13 @@
 # role: mysql
 
+- name: Load needed paths
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+    - "default.yml"
+
 - name: Install mysql packages (mysql)
   action: apt pkg={{item}} state=installed
   with_items:
@@ -8,18 +16,39 @@
        - libdbi-perl
        - python-mysqldb
 
+- name: Add anonymous mysql user
+  mysql_user:
+    name: anonymous
+    host: "%"
+    priv: '*.*:SELECT'
+    state: present
+
+- name: Bind to external ip
+  ini_file:
+    dest: "{{ mysql_config }}"
+    section: mysqld
+    option: "bind-address"
+    value: "0.0.0.0"
+  notify: Restart-Mysql
+    
 - name: Mount the mysql volume
   mount:
-    path: /dev/vdb
-    src: /var/lib/mysql
+    src: /dev/vdb
+    path: /mnt
     fstype: ext4
-    state: present
+    state: mounted
     
 - name: Ensure database files are owned by mysql
   file:
-    path: /var/lib/mysql
+    path: /mnt
     owner: mysql
     group: mysql
     recurse: yes
     state: directory
+
+- name: Symlink the database files
+  shell: ln -s /mnt/* .
+  args:
+    chdir: /var/lib/mysql
+  ignore_errors: yes
   notify: Restart-Mysql

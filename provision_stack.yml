@@ -190,7 +190,7 @@
 - name: Configure gateway
   hosts:
     - routers
-  become: yes
+  become: no
   gather_facts: False
 
   roles:
@@ -231,4 +231,10 @@
   roles:
     - mysql
 
+- name: Tark server(s) setup
+  hosts:
+    - tark_workers
+  become: yes
 
+  roles:
+    - tark
