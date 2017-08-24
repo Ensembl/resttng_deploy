@@ -1,17 +1,40 @@
 ---
 
-vm_username: debian
-#vm_username: ubuntu
+# Number of workers for each
+# component to create
 num_catalyst_workers: 2
 num_tark_workers: 1
 num_faidx_workers: 1
+
+# Location of private key to install on instances
+rest_public_key: "~/.ssh/rest.pub"
 rest_private_key: "~/.ssh/rest.pem"
 
+# Cloud to use, referencing clouds.yaml
 cloud_name: embassy6
-host_key: rest
+
+# Floating IP to use
 floating_ip: 193.62.52.138
 
+# Network id for the private virtual network
+# Virtual router must be hooked to an external network
+network_id: f9ef7b9f-12ba-4790-9ae9-efeb2c3cbcef
+
+# Volume name containing the Ensembl and TaRK databases
+mysql_volume_name: mysql_databases
+
+# Instance sizes
+haproxy_instance_size: s1.small
+mysql_instance_size: s1.large
+worker_instance_size: s1.large
+
+host_key: rest
+
+# Images
+
 # Stetch
+vm_username: debian
 image: d7ef3727-ba69-4439-b9dd-5ff2d9c351f1
 # Xenial
+#vm_username: ubuntu
 #image: 86c6418b-d4f3-4add-8780-4629e30ce73d

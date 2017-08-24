@@ -134,6 +134,8 @@
   apache2_module:
     state: absent
     name: "{{ item }}"
+    ignore_configcheck: true
+    force: yes
   with_items:
     - mpm_event
   notify: Restart-Apache
@@ -142,7 +144,12 @@
   apache2_module:
     state: present
     name: "{{ item }}"
+    ignore_configcheck: true
+    force: yes
+  retries: 3
+  register: activate_mpm
+  until: activate_mpm | success
   with_items:
-    - faidx
     - mpm_prefork
+    - faidx
   notify: Restart-Apache

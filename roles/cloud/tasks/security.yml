@@ -1,0 +1,73 @@
+---
+# role: cloud/security
+
+- name: Add ssh key to openstack
+  os_keypair:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: "{{ host_key }}"
+    public_key_file: "{{ rest_public_key|expanduser }}"
+
+- name: ssh security group
+  os_security_group:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: ssh
+    description: security group for ssh access
+
+- name: http security group
+  os_security_group:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: http
+    description: security group for http access
+
+- name: https security group
+  os_security_group:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: https
+    description: security group for https access
+
+- name: letsencrypt security group
+  os_security_group:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: letsencrypt
+    description: security group for letsencrypt access
+
+- name: Port ingress rule for ssh
+  os_security_group_rule:
+    cloud: "{{ cloud_name }}"
+    security_group: ssh
+    protocol: tcp
+    port_range_min: 22
+    port_range_max: 22
+    remote_ip_prefix: 0.0.0.0/0
+
+- name: Port ingress rule for http
+  os_security_group_rule:
+    cloud: "{{ cloud_name }}"
+    security_group: http
+    protocol: tcp
+    port_range_min: 80
+    port_range_max: 80
+    remote_ip_prefix: 0.0.0.0/0
+
+- name: Port ingress rule for https
+  os_security_group_rule:
+    cloud: "{{ cloud_name }}"
+    security_group: https
+    protocol: tcp
+    port_range_min: 443
+    port_range_max: 443
+    remote_ip_prefix: 0.0.0.0/0
+
+- name: Port ingress rule for letsencrypt
+  os_security_group_rule:
+    cloud: "{{ cloud_name }}"
+    security_group: letsencrypt
+    protocol: tcp
+    port_range_min: 54321
+    port_range_max: 54321
+    remote_ip_prefix: 0.0.0.0/0
