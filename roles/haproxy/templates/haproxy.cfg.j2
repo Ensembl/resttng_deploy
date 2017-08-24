@@ -65,7 +65,18 @@ frontend www_http_https
 
 	default_backend catalyst_rest
 
-	acl tark_url path_beg /tark
+	acl faidx_url path_beg /faidx
+	acl faidx_url path_beg /sequence/region
+	acl faidx_url path_beg /sequence/set
+	use_backend faidx if faidx_url
+
+	acl tark_url path_beg /sequence
+	acl tark_url path_beg /genome
+	acl tark_url path_beg /assembly
+	acl tark_url path_beg /location
+	acl tark_url path_beg /lookup
+	acl tark_url path_beg /checksum
+	acl tark_url path_beg /diff
 	use_backend tark_rest if tark_url
 
 	# Handle letsencrypt renewals
@@ -87,6 +98,15 @@ backend tark_rest
 	{% if 'tark_workers' in groups %}
 	{%     for host in groups['tark_workers'] %}
 	server tark_worker{{ loop.index }} {{ host }}:80
+	{%     endfor %}
+	{% endif %}
+
+backend faidx
+	balance roundrobin
+
+	{% if 'faidx_workers' in groups %}
+	{%     for host in groups['faidx_workers'] %}
+	server faidx_worker{{ loop.index }} {{ host }}:80
 	{%     endfor %}
 	{% endif %}
 

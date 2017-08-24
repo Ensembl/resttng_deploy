@@ -1,0 +1,11 @@
+{% for assembly, values in fasta_files.iteritems() %}
+FaidxSet {{ assembly }} /opt/faidx/fai/{{ values.url|basename|splitext|first }}.bgz
+{% endfor %}
+
+<Location /sequence>
+  SetHandler faidx
+</Location>
+
+<Location /faidx>
+  SetHandler faidx
+</Location>

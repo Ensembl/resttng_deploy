@@ -1,0 +1,27 @@
+# role: apache2
+
+- name: Install mod_wsgi stack (Debian)
+  action: apt pkg={{item}} state=installed
+  with_items:
+       - apache2
+       - apache2-dev
+       - libapache2-mod-wsgi
+       - python-pip
+       - libpq-dev
+  when: ansible_os_family == 'Debian'
+
+- name: Install mod_wsgi stack (Redhat)
+  action: apt pkg={{item}} state=installed
+  with_items:
+       - httpd
+       - httpd-devel
+       - mod_wsgi
+       - python-pip
+       - postgresql-devel
+  when: ansible_os_family == 'Redhat'
+
+- name: Disable default vhost
+  command: "a2dissite {{ item }}"
+  with_items:
+    - 000-default
+

@@ -1,0 +1,13 @@
+---
+# group_vars/faidx_workers
+
+# This should probably point to specific versions,
+# not "current"
+
+fasta_files:
+  GRCh38:
+    url: "http://ftp.ensembl.org/pub/current_fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.toplevel.fa.gz"
+  GRCh38m:
+    url: "http://ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.toplevel.fa.gz"
+  GRCh37:
+    url: "http://ftp.ensembl.org/pub/grch37/current/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.toplevel.fa.gz"

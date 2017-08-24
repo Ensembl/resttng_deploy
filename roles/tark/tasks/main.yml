@@ -1,23 +1,5 @@
 # role: tark
 
-- name: Install mod_wsgi stack (Debian)
-  action: apt pkg={{item}} state=installed
-  with_items:
-       - apache2
-       - libapache2-mod-wsgi
-       - python-pip
-       - libpq-dev
-  when: ansible_os_family == 'Debian'
-
-- name: Install mod_wsgi stack (Redhat)
-  action: apt pkg={{item}} state=installed
-  with_items:
-       - httpd
-       - mod_wsgi
-       - python-pip
-       - postgresql-devel
-  when: ansible_os_family == 'Redhat'
-
 - name: Create the directory for tark
   file:
     path: /opt/tark
@@ -25,6 +7,12 @@
     mode: 0755
     owner: "{{ vm_username }}"
     group: "{{ vm_username }}"
+
+- name: See if TaRK git repo exists
+  stat:
+    path: /opt/tark/tark_app
+  register: tark_repo_dir
+
 - name: Fetch TaRK git repo
   become: false
   git:
@@ -32,7 +20,18 @@
     dest: /opt/tark/tark_app
     version: master
     clone: yes
+  when: not tark_repo_dir.stat.exists
 
+- name: Tune config for mod_faidx
+  lineinfile:
+    dest: "{{ item.file }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - { file: "/opt/tark/tark_app/tark_rest/settings/base.py", regexp: '^SEQ_HOST_URI.*', line: "SEQ_HOST_URI = 'http://haproxy/faidx/'" }
+    - { file: "/opt/tark/tark_app/tark_rest/urls.py", regexp: '.*tark.urls.*', line: "    url(r'^', include('tark.urls'))" }
+    
 - name: Create TaRK virtualenv
   become: false
   pip:
@@ -61,12 +60,6 @@
     - tark
   notify: Restart-Apache
     
-- name: Disable default vhost
-  command: "a2dissite {{ item }}"
-  with_items:
-    - 000-default
-  notify: Restart-Apache
-
 - name: Activate wsgi module
   apache2_module:
     state: present

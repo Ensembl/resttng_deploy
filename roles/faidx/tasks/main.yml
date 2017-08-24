@@ -1,0 +1,148 @@
+# role: faidx
+
+- name: Install samtools dependencies (Debian)
+  action: apt pkg={{item}} state=installed
+  with_items:
+    - libncurses5-dev
+  when: ansible_os_family == 'Debian'
+
+- name: Install samtools dependencies (Redhat)
+  action: apt pkg={{item}} state=installed
+  with_items:
+    - ncurses-devel
+  when: ansible_os_family == 'Redhat'
+
+- name: Create the directory for mod_faidx
+  file:
+    path: /opt/faidx
+    state: directory
+    mode: 0755
+    owner: "{{ vm_username }}"
+    group: "{{ vm_username }}"
+
+- name: Fetch git repos
+  become: false
+  git:
+    repo: "{{ item.repo }}"
+    dest: "/opt/faidx/{{ item.dest }}"
+    version: master
+    clone: yes
+  with_items:
+    - { repo: "https://github.com/lairdm/apache-faidx.git", dest: "apache-faidx" }
+    - { repo: "https://github.com/samtools/htslib.git", dest: "htslib" }
+    - { repo: "https://github.com/samtools/samtools.git", dest: "samtools" }
+    
+- name: Make htslib
+  make:
+    chdir: /opt/faidx/htslib
+    target: all
+
+- name: Install htslib
+  make:
+    chdir: /opt/faidx/htslib
+    target: install
+  notify: Run-ldconfig
+    
+- name: Make samtools
+  shell: "{{ item }}"
+  args:
+    chdir: /opt/faidx/samtools
+  with_items:
+    - autoconf -Wno-syntax
+    - make
+    - make install
+  notify: Run-ldconfig
+  
+- name: Make mod_faidx
+  environment:
+    HTSLIB_DIR: /opt/faidx/htslib
+  make:
+    chdir: /opt/faidx/apache-faidx
+    target: debug
+
+- name: Install mod_faidx
+  make:
+    chdir: /opt/faidx/apache-faidx
+    target: install
+
+- name: Create the directory for fai files
+  file:
+    path: /opt/faidx/fai
+    state: directory
+    mode: 0755
+    owner: "{{ vm_username }}"
+    group: "{{ vm_username }}"
+
+- name: Get Apache modules directory
+  shell: apxs2 -q exp_libexecdir
+  register: apache_module_dir_output
+
+- name: Set apache install dir fact
+  set_fact: apache_module_dir="{{ apache_module_dir_output.stdout }}"
+
+- name: Create apache module load config
+  lineinfile:
+    dest: /etc/apache2/mods-available/faidx.load
+    line: "LoadModule faidx_module {{ apache_module_dir }}/mod_faidx.so"
+    create: yes
+    state: present
+
+- name: Fetch the fasta files
+  become: false
+  get_url:
+    url: "{{ item.value.url }}"
+    dest: "/opt/faidx/fai/{{ item.value.url|basename }}"
+  with_dict: "{{ fasta_files }}"
+  register: downloaded_files
+
+- name: Set local filenames fact
+  set_fact: url_item="{{ item.value.url|basename|splitext|first }}"
+  with_dict: "{{ fasta_files }}"
+  register: url_item_result
+  
+- name: Make list of filenames
+  set_fact: local_files="{{ url_item_result.results | map(attribute='ansible_facts.url_item') | list }}"
+
+- debug:
+    var: local_files
+    
+- name: bgzip fasta files
+  become: false
+  shell: "gunzip -dc /opt/faidx/fai/{{ item }}.gz| bgzip -c >/opt/faidx/fai/{{ item }}.bgz"
+  args:
+    chdir: /opt/faidx/fai
+    creates: "/opt/faidx/fai/{{ item }}.bgz"
+  with_items: "{{ local_files }}"
+
+- name: Create fai indices
+  become: false
+  shell: "samtools faidx {{ item }}.bgz"
+  args:
+    chdir: /opt/faidx/fai
+    creates: "/opt/faidx/fai/{{ item }}.bgz.gzi"
+  with_items: "{{ local_files }}"
+  
+- name: Create faidx config file
+  template:
+    src: mod_faidx.conf.j2
+    dest: /etc/apache2/mods-available/faidx.conf
+    force: yes
+    owner: root
+    group: root
+
+- name: Deactivate mpm-event worker, faidx is notthread safe
+  apache2_module:
+    state: absent
+    name: "{{ item }}"
+  with_items:
+    - mpm_event
+  notify: Restart-Apache
+
+- name: Activate faidx and mpm-prefork modules
+  apache2_module:
+    state: present
+    name: "{{ item }}"
+  with_items:
+    - faidx
+    - mpm_prefork
+  notify: Restart-Apache

@@ -4,6 +4,7 @@ vm_username: debian
 #vm_username: ubuntu
 num_catalyst_workers: 2
 num_tark_workers: 1
+num_faidx_workers: 1
 rest_private_key: "~/.ssh/rest.pem"
 
 cloud_name: embassy6

@@ -154,7 +154,7 @@
         nics: "net-id=f9ef7b9f-12ba-4790-9ae9-efeb2c3cbcef"
         auto_ip: no
         meta:
-         hostname: tark
+         hostname: "tark-{{ item }}"
          group: www
          project: rest_prototype
         userdata: |
@@ -175,6 +175,46 @@
         ansible_ssh_host: "{{ item.openstack.private_v4 }}"
         ansible_ssh_user: "{{ vm_username }}"
       with_items: "{{ rest_tark_vms.results }}"
+      tags: ['vm_creation']
+
+    - name: Create the faidx server
+      register: rest_faidx_vms
+      os_server:
+        state: present
+        cloud: "{{ cloud_name }}"
+        name: "faidx-{{ item }}"
+        image: "{{ image }}"
+        key_name: "{{ host_key }}"
+        security_groups:
+          - ssh
+          - http
+        timeout: 200
+        flavor: s1.large
+        terminate_volume: yes
+        nics: "net-id=f9ef7b9f-12ba-4790-9ae9-efeb2c3cbcef"
+        auto_ip: no
+        meta:
+         hostname: "faidx-{{ item }}"
+         group: faidx
+         project: rest_prototype
+        userdata: |
+          #cloud-config
+          package_upgrade: true
+          package_reboot_if_required: false
+          packages:
+            - python-minimal
+          runcmd:
+            - sudo perl -pi -e "s/127.0.0.1 localhost.*/127.0.0.1 localhost `hostname`/g" /etc/hosts
+      with_sequence: count={{ num_faidx_workers }}
+      tags: ['vm_creation']
+
+    - name: add the faidx workers to inventory
+      add_host:
+        name: "{{ item.openstack.name }}"
+        groups: faidx_workers
+        ansible_ssh_host: "{{ item.openstack.private_v4 }}"
+        ansible_ssh_user: "{{ vm_username }}"
+      with_items: "{{ rest_faidx_vms.results }}"
       tags: ['vm_creation']
 
     - name: wait for haproxy to come up
@@ -238,3 +278,11 @@
 
   roles:
     - tark
+
+- name: Faidx server(s) setup
+  hosts:
+    - faidx_workers
+  become: yes
+
+  roles:
+    - faidx

@@ -8,6 +8,7 @@
   vars:
     remove_tark: "yes"
     remove_catalyst: "yes"
+    remove_faidx: "yes"
     remove_mysql: "yes"
     remove_haproxy: "yes"
     
@@ -26,6 +27,13 @@
         state: absent
       with_sequence: count={{ num_tark_workers }}
       when: remove_tark | bool
+
+    - name: remove faidx workers
+      os_server:
+        name: "faidx-{{ item }}"
+        state: absent
+      with_sequence: count={{ num_faidx_workers }}
+      when: remove_faidx | bool
 
     - name: remove mysql
       os_server:
