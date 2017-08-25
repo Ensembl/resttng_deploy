@@ -41,7 +41,12 @@
   make:
     chdir: /opt/faidx/htslib
     target: install
-  notify: Run-ldconfig
+
+# Using a notify won't work because ldconfig has to
+# be run before mod_faidx is loaded via a2enmod
+
+- name: Run ldconfig for htslib
+  shell: ldconfig
     
 - name: Make samtools
   shell: "{{ item }}"
@@ -130,26 +135,19 @@
     owner: root
     group: root
 
-- name: Deactivate mpm-event worker, faidx is notthread safe
-  apache2_module:
-    state: absent
-    name: "{{ item }}"
-    ignore_configcheck: true
-    force: yes
-  with_items:
-    - mpm_event
+# We have to shell out because the apache2_module fails when
+# trying to swap mpms
+
+- name: Swap to mpm_prefork, htslib is not thread safe
+  shell: a2dismod mpm_event; a2dismod mpm_worker; a2enmod mpm_prefork
+  args:
+    chdir: /etc/apache2
   notify: Restart-Apache
 
-- name: Activate faidx and mpm-prefork modules
+- name: Activate faidx module
   apache2_module:
     state: present
     name: "{{ item }}"
-    ignore_configcheck: true
-    force: yes
-  retries: 3
-  register: activate_mpm
-  until: activate_mpm | success
   with_items:
-    - mpm_prefork
     - faidx
   notify: Restart-Apache
