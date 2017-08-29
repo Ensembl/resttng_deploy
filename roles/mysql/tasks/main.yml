@@ -30,7 +30,15 @@
     option: "bind-address"
     value: "0.0.0.0"
   notify: Restart-Mysql
-    
+
+- name: innodb_file_per_table
+  ini_file:
+    dest: "{{ mysql_config }}"
+    section: mysqld
+    option: "innodb_file_per_table"
+    value: "ON"
+  notify: Restart-Mysql
+
 - name: Mount the mysql volume
   mount:
     src: /dev/vdb
