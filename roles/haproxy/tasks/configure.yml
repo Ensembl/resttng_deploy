@@ -9,3 +9,21 @@
     owner: root
     group: root
   notify: Restart-Haproxy
+
+- name: Copy the 429 error message file
+  copy:
+    src: 429.http
+    dest: /etc/haproxy/errors/429.http
+    mode: 0644
+
+- name: Create dummy abuser allowed headers file
+  file:
+    path: /etc/haproxy/allowed_abusers.lst
+    mode: 0640
+    state: touch
+
+- name: Create dummy abuser allowed ip file
+  file:
+    path: /etc/haproxy/allowed_abusers_ip.lst
+    mode: 0640
+    state: touch

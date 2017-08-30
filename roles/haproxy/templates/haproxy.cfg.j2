@@ -31,6 +31,7 @@ defaults
 	errorfile 400 /etc/haproxy/errors/400.http
 	errorfile 403 /etc/haproxy/errors/403.http
 	errorfile 408 /etc/haproxy/errors/408.http
+        errorfile 429 /etc/haproxy/errors/429.http
 	errorfile 500 /etc/haproxy/errors/500.http
 	errorfile 502 /etc/haproxy/errors/502.http
 	errorfile 503 /etc/haproxy/errors/503.http
@@ -40,20 +41,55 @@ frontend www_http_https
 	bind 0.0.0.0:80
 #	bind *:443 ssl crt /etc/haproxy/certs/resttng.pem
 
+	# Load the list of allowed values for "X-Whitelist-Override" header
+        # use this in the http-request line below, don't deny user if they have the correct header
+        acl allowed_abusers hdr(X-Whitelist-Override) -f /etc/haproxy/allowed_abusers.lst
+
+        # List of allowed IP addresses in whitelist
+        acl allowed_abusers_ip src -f /etc/haproxy/allowed_abusers_ip.lst
+
 	# Rate limit abuse
         stick-table type ip size 1m expire 10s store gpc0,http_req_rate(10s)
-        tcp-request connection track-sc1 src
-	acl flag_ratelimit_abuser src_get_gpc0 gt 0
-			   
+        tcp-request connection track-sc1 src table www_http_https
+        tcp-request connection track-sc1 src table hour_throttle
+
 	# Hard rate limit for number of requests
+	acl flag_ratelimit_abuser src_get_gpc0 gt 0
 	acl abuse src_http_req_rate(www_http_https) gt 350
 	acl flag_abuser src_inc_gpc0(www_http_https) gt 0 # I've add "gt 0" otherwise it's not parsed
+
+        # Count users over 60 minutes and impose a 429 rate limit
+	# These two lines might be usable by someone smarter than I to properly
+	# get the time until the oldest stick table entry expires to set an
+	# accurate Retry-After line
+#       stick store-reponse gpc0,src,http_req_rate(3600s) table hour_throttle if !localhost
+#       stick on src table hour_throttle if !localhost
+        acl hour_abuser src_http_req_rate(hour_throttle) gt 5500
+        acl flag_hour_abuse sc1_inc_gpc0(hour_throttle) gt 0 # I've add "gt 0" otherwise it's not parsed
+
+	# Variables to calculate the remaining rate limit, int(5500) should
+	# match the 5500 above, requests allowed per hour
+        http-request set-var(txn.req_counter) src_http_req_rate(hour_throttle)
+        http-request set-var(txn.abuse_count) int(5500),sub(txn.req_counter)
+	# Experimental with the above attempt at getting Retry-After to work
+#        http-request set-var(txn.val) src_get_gpc0(hour_throttle)
+
+	# Add the headers for rate limit remaining and total allowed
+        http-response add-header X-RateLimit-Remaining %[var(txn.abuse_count)]
+        http-response add-header X-RateLimit-Limit %[int(5500)]
+        http-response add-header X-RateLimit-Period %[int(3600)]
+
+	# More attempt at seeing the stick table entries
+#        http-response add-header X-Val %[var(txn.val)]
+
+	# If the user is over the hourly limit, send them back a canned 429
+        http-request deny deny_status 429 if !allowed_abusers !allowed_abusers_ip hour_abuser
 
         #
         # refuses a new connection from an abuser
         tcp-request content reject if abuse flag_abuser flag_ratelimit_abuser
         # returns a 403 for requests in an established connection
-        http-request deny if abuse flag_abuser flag_ratelimit_abuser
+        http-request deny if !allowed_abusers !allowed_abusers_ip abuse flag_abuser flag_ratelimit_abuser
 
         # General request protection
 	acl deny_big hdr_val(content-length) ge 1000000
@@ -112,4 +148,10 @@ backend faidx
 
 backend letsencrypt-backend
 	server letsencrypt 127.0.0.1:54321
-   
+
+# Dummy backend to give us a second stick table for the hourly access
+# rate limit
+frontend hour_throttle
+        stick-table type ip size 1m expire 3600s store gpc0,http_req_rate(3600s)
+        tcp-request connection track-sc1 src
+        acl flag_ratelimit_abuser src_get_gpc0 gt 0
