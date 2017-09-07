@@ -31,6 +31,7 @@
   with_items:
     - { file: "/opt/tark/tark_app/tark_rest/settings/base.py", regexp: '^SEQ_HOST_URI.*', line: "SEQ_HOST_URI = 'http://haproxy/faidx/'" }
     - { file: "/opt/tark/tark_app/tark_rest/urls.py", regexp: '.*tark.urls.*', line: "    url(r'^', include('tark.urls'))" }
+    - { file: "/opt/tark/tark_app/tark_rest/settings/base.py", regexp: '^DEBUG.*', line: "DEBUG = False" }
     
 - name: Create TaRK virtualenv
   become: false
