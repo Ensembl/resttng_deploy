@@ -101,6 +101,10 @@ frontend www_http_https
 
 	default_backend catalyst_rest
 
+        acl is_root path -i /
+        acl is_betatark hdr(host) -i betatark.ensembl.org
+        redirect code 301 location http://betatark.ensembl.org/tark if is_root is_betatark
+
 	acl faidx_url path_beg /faidx
 	acl faidx_url path_beg /sequence/region
 	acl faidx_url path_beg /sequence/set
@@ -113,6 +117,7 @@ frontend www_http_https
 	acl tark_url path_beg /lookup
 	acl tark_url path_beg /checksum
 	acl tark_url path_beg /diff
+	acl tark_url path_beg /tark
 	use_backend tark_rest if tark_url
 
 	# Handle letsencrypt renewals

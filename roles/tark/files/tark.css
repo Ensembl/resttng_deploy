@@ -1,0 +1,40 @@
+#header {
+  margin: 10px 10px 0px 10px;
+  background-color: #002663;
+  height: 50px;
+  padding: 12px 25px 12px 25px;
+}
+
+.header-wrapper {
+  vertical-align: middle;
+}
+
+.title {
+  padding: 0px 0px 0px 10px;
+  color: white;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.red_text {
+  color: red;
+}
+
+div.bodytext {
+  font: inherit;
+  line-height: 1;
+  font-family: "Droid Sans", sans-serif;
+  padding: 14px 25px 10px 25px;
+}
+
+div.fundingtext {
+  font: inherit;
+  line-height: 1;
+  font-family: "Droid Sans", sans-serif;
+  padding: 14px 25px 10px 25px;
+  font-size: 1.2em;
+}
+
+.fundingimg {
+  padding: 10px 30px 5px 30px;
+}

@@ -1,0 +1,48 @@
+# role: tark/swagger
+
+- name: Create the directory for task landing page
+  file:
+    path: /opt/tark/static
+    state: directory
+    mode: 0755
+    owner: "{{ vm_username }}"
+    group: "{{ vm_username }}"
+
+- name: Copy tark landing page
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner:  "{{ vm_username }}"
+    group: "{{ vm_username }}"
+    mode: 0644
+  with_items:
+    - { src: "ebang.png", dest: "/opt/tark/static/ebang.png" }
+    - { src: "EMBL.png", dest: "/opt/tark/static/EMBL.png" }
+    - { src: "TGMI.png", dest: "/opt/tark/static/TGMI.png" }
+    - { src: "index.html", dest: "/opt/tark/static/index.html" }
+    - { src: "tark.css", dest: "/opt/tark/static/tark.css" }
+
+- name: See if Swagger UI exists
+  stat:
+    path: /opt/tark/swagger-ui
+  register: swagger_repo_dir
+  
+- name: Clone the Swagger UI repo
+  become: false
+  git:
+    repo: https://github.com/swagger-api/swagger-ui.git
+    dest: /opt/tark/swagger-ui
+    version: master
+    clone: yes
+  when: not swagger_repo_dir.stat.exists
+
+- name: Tune Swagger UI
+  lineinfile:
+    dest: "{{ item.file }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - { file: "/opt/tark/swagger-ui/dist/index.html", regexp: 'petstore\.swagger\.io', line: "url: \"http://{{ HOST_URI }}/tark/tark-swagger.yaml\"," }
+    - { file: "/opt/tark/tark_app/docs/tark-swagger.yaml", regexp: '^host:.*', line: "host: {{ HOST_URI }}" }
+    - { file: "/opt/tark/tark_app/docs/tark-swagger.yaml", regexp: '^basePath:.*', line: "basePath: /" }

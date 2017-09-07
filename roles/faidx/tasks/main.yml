@@ -92,6 +92,13 @@
     create: yes
     state: present
 
+- name: Enable CORS
+  lineinfile:
+    dest: /etc/apache2/apache2.conf
+    line: "Header set Access-Control-Allow-Origin \"*\""
+    create: yes
+    state: present
+
 - name: Fetch the fasta files
   become: false
   get_url:
@@ -150,4 +157,10 @@
     name: "{{ item }}"
   with_items:
     - faidx
+  notify: Restart-Apache
+
+- name: Activate headers module
+  apache2_module:
+    state: present
+    name: headers
   notify: Restart-Apache

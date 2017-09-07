@@ -1,5 +1,8 @@
 ---
 
+# URL for deployment
+HOST_URI: resttng.ensembl.org
+
 # Number of workers for each
 # component to create
 num_catalyst_workers: 2

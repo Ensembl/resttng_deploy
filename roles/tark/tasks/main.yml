@@ -65,7 +65,13 @@
     state: present
     name: wsgi
   notify: Restart-Apache
-  
+
+- name: Activate headers module
+  apache2_module:
+    state: present
+    name: headers
+  notify: Restart-Apache
+
 # Using the default anonymous user, there is no
 # secret here.
 - name: Move secrets files in to app
@@ -75,3 +81,7 @@
     owner: www-data
     group: www-data
     mode: 0644
+
+- name: Setup Swagger UI
+  include: swagger.yml
+
