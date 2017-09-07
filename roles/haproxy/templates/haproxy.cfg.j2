@@ -39,7 +39,7 @@ defaults
 
 frontend www_http_https
 	bind 0.0.0.0:80
-#	bind *:443 ssl crt /etc/haproxy/certs/resttng.pem
+#	bind *:443 ssl crt /etc/haproxy/certs/resttng.ensembl.org.pem
 
 	# Load the list of allowed values for "X-Whitelist-Override" header
         # use this in the http-request line below, don't deny user if they have the correct header

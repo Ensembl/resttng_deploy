@@ -51,9 +51,32 @@
   action: apt pkg={{item}} state=installed
   with_items:
     - haproxy
-
+    - letsencrypt
+    - bc
+    
 - name: Enable haproxy
   service:
     name: haproxy
     enabled: yes
     
+- name: Copy letsencrypt config file
+  copy:
+    src: cli.ini
+    dest: /root/cli.ini
+    owner: root
+    group: root
+
+- name: Copy letsencrypt renewal script
+  copy:
+    src: le-renew-cert.sh
+    dest: /root/le-renew-cert.sh
+    owner: root
+    group: root
+
+- name: Create the directory for certs
+  file:
+    path: /etc/haproxy/certs
+    state: directory
+    mode: 0750
+    owner: root
+    group: root
