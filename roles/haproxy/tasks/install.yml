@@ -80,3 +80,12 @@
     mode: 0750
     owner: root
     group: root
+
+- name: Add certbot renewal cron
+  cron:
+    name: "renew letsencrypt"
+    minute: "0"
+    hour: "3"
+    job: "/root/le-renew-cert.sh"
+    user: root
+    cron_file: le-renew

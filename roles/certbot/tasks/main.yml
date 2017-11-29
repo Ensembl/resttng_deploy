@@ -12,3 +12,9 @@
 - name: Install certbot (Debian Stretch)
   include: stretch.yml
   when: ansible_distribution_release == 'stretch'
+
+- name: Remove the certbot cron
+  file:
+    path: /etc/cron.d/certbot
+    state: absent
+    force: yes
