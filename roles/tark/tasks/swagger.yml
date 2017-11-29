@@ -19,7 +19,9 @@
     - { src: "ebang.png", dest: "/opt/tark/static/ebang.png" }
     - { src: "EMBL.png", dest: "/opt/tark/static/EMBL.png" }
     - { src: "TGMI.png", dest: "/opt/tark/static/TGMI.png" }
+    - { src: "tark_schema.png", dest: "/opt/tark/static/tark_schema.png" }
     - { src: "index.html", dest: "/opt/tark/static/index.html" }
+    - { src: "about.html", dest: "/opt/tark/static/about.html" }
     - { src: "tark.css", dest: "/opt/tark/static/tark.css" }
 
 - name: See if Swagger UI exists

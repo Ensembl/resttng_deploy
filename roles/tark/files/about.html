@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Transcript Archive - About</title>
+
+  <link href='tark.css' media='screen' rel='stylesheet' type='text/css'/>
+</head>
+
+<body>
+
+<div id="header">
+  <div class="header-wrapper">
+<img src="ebang.png" height="50" width="50" style="vertical-align:middle" /><span class="title">Transcript Archive <span class="red_text">Beta</span></span>
+  </div>
+</div>
+<div id="body">
+<div class="bodytext"><h1>About this beta</h1></div>
+
+<div class="bodytext">
+This instance of TaRK has human annotations and sequences for Ensembl releases 86 to 90 loaded, along with a Swagger/OpenAPI based site for exploring the API. Currently, there are endpoints allowing basic lookups of annotations and sequence retrieval. As well, there's a proof of concept endpoint showing how calculating the difference between Ensembl releases might work and retrieving annotations by HGVS nomenclature.
+</div>
+
+<div class="bodytext">
+Examples:
+<ul>
+<li><a href="http://betatark.ensembl.org/lookup/gene/?id=ENSG00000198001&expand=true&skip_sequence=false&filter_pk=true">Lookup ENSG00000198001 (IRAK4) and expand to show all child transcripts and translations</a></li>
+<li><a href="http://betatark.ensembl.org/lookup/name/gene/?name=IRAK4&expand=false&skip_sequence=true">Lookup IRAK4 in all Ensembl releases</a></li>
+<li><a href="http://betatark.ensembl.org/location/human/transcript/?region=12&start=43750000&end=43790000&expand=false&skip_sequence=false">Find all transcripts overlapping coordinates 12:43750000:43790000</a></li>
+</ul>
+</div>
+
+<div class="bodytext">
+Schema:<br />
+<a href="tark_schema.png"><img src="tark_schema.png" style="max-width:100%;"></a><br />
+<i>(click to enlarge)</i>
+</div>
+<div class="bodytext">
+<b>Known limitations/future enhancements:</b> The current beta does not properly handle displaying the same feature when it remains unchanged across Ensembl releases, these are currently shown as separate records when they should be collapsed and a list of all relevant releases included in the record. As well, the manner in which assemblies are modelled is problematic, patch level releases of assemblies should be better grouped under the main assembly release (eg. GRCh37, GRCh38). Addressing these issues and other enhancements are in the development plan for TaRK going forward, and we welcome any other feedback on how to improve the API.
+</div>
+
+<div class="bodytext"><a href="/tark/swagger/">Explore TArK</a></div>
+
+<div class="fundingtext">Funding:</div>
+<div class="bodytext"><img class="fundingimg" src="EMBL.png" style="vertical-align:middle" height="75" /><img class="fundingimg" src="TGMI.png" style="vertical-align:middle" height="75" /></div>
+</div>
+</body>
+</html>
