@@ -59,6 +59,7 @@
     key_name: "{{ host_key }}"
     security_groups:
       - ssh
+      - mysql
     timeout: 200
     flavor: "{{ mysql_instance_size }}"
     nics: "net-id={{ network_id }}"

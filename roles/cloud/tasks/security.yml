@@ -29,6 +29,13 @@
     name: https
     description: security group for https access
 
+- name: mysql security group
+  os_security_group:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: mysql
+    description: security group for mysql access
+
 - name: letsencrypt security group
   os_security_group:
     cloud: "{{ cloud_name }}"
@@ -61,6 +68,15 @@
     protocol: tcp
     port_range_min: 443
     port_range_max: 443
+    remote_ip_prefix: 0.0.0.0/0
+
+- name: Port ingress rule for mysql
+  os_security_group_rule:
+    cloud: "{{ cloud_name }}"
+    security_group: mysql
+    protocol: tcp
+    port_range_min: 3306
+    port_range_max: 3306
     remote_ip_prefix: 0.0.0.0/0
 
 - name: Port ingress rule for letsencrypt
