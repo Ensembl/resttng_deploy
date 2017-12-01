@@ -22,6 +22,9 @@ This instance of TaRK has human annotations and sequences for Ensembl releases 8
 </div>
 
 <div class="bodytext">
+The slide deck from a presentation on TaRK <a href="TaRK_presentation.pdf">can be found here</a>.
+</div>
+<div class="bodytext">
 Examples:
 <ul>
 <li><a href="http://betatark.ensembl.org/lookup/gene/?id=ENSG00000198001&expand=true&skip_sequence=false&filter_pk=true">Lookup ENSG00000198001 (IRAK4) and expand to show all child transcripts and translations</a></li>
@@ -34,6 +37,19 @@ Examples:
 Schema:<br />
 <a href="tark_schema.png"><img src="tark_schema.png" style="max-width:100%;"></a><br />
 <i>(click to enlarge)</i>
+</div>
+<div class="bodytext"><b>Checksums</b></div>
+<div class="bodytext">For both data integrity reasons and to facilitate calculating the differences between releases checksums are done at multiple levels of the data model.
+<ul>
+<li>Release set</li>
+<li>Geomic location of every feature</li>
+<li>Gene</li>
+<li>Transcript</li>
+<li>Exon set of a transcript</li>
+<li>Translation</li>
+<li>Sequences</li>
+<li>Tagged feature sets</li>
+</ul>
 </div>
 <div class="bodytext">
 <b>Known limitations/future enhancements:</b> The current beta does not properly handle displaying the same feature when it remains unchanged across Ensembl releases, these are currently shown as separate records when they should be collapsed and a list of all relevant releases included in the record. As well, the manner in which assemblies are modelled is problematic, patch level releases of assemblies should be better grouped under the main assembly release (eg. GRCh37, GRCh38). Addressing these issues and other enhancements are in the development plan for TaRK going forward, and we welcome any other feedback on how to improve the API.
